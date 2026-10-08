@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { configureApp } from './setup-app'
@@ -10,7 +11,7 @@ async function bootstrap() {
   const port = Number(process.env.PORT ?? 3000)
   await app.listen(port)
 
-  console.log(`API ready on http://localhost:${port}/api`)
+  new Logger('Bootstrap').log(`API ready on http://localhost:${port}/api`)
 }
 
 void bootstrap()
