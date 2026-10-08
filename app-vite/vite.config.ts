@@ -20,5 +20,21 @@ export default defineConfig(({ mode }) => {
       },
       host: true,
     },
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              {
+                // Libraries change less often than app code; a separate chunk
+                // stays cached across deploys.
+                name: 'vendor',
+                test: /[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|@tanstack[\\/][^\\/]+)[\\/]/,
+              },
+            ],
+          },
+        },
+      },
+    },
   }
 })
