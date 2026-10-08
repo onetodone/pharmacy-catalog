@@ -1,11 +1,12 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ThrottlerGuard } from '@nestjs/throttler'
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler'
 import type { Request, Response } from 'express'
 import { AuthService, IssuedSession, RequestContext } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
 import { getRefreshTokenTtl, refreshCookieOptions, REFRESH_TOKEN_COOKIE } from './jwt-config'
+import { AUTH_THROTTLER, REFRESH_THROTTLER } from './throttlers'
 import { Public } from '../common/decorators/public.decorator'
 import { CurrentUser } from '../common/decorators/current-user.decorator'
 import { AuthUser } from '../common/auth-user'
@@ -16,6 +17,7 @@ function requestContext(req: Request): RequestContext {
 
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
+@SkipThrottle({ [REFRESH_THROTTLER]: true })
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
@@ -42,6 +44,7 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
+  @SkipThrottle({ [AUTH_THROTTLER]: true, [REFRESH_THROTTLER]: false })
   @HttpCode(200)
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const raw = req.cookies?.[REFRESH_TOKEN_COOKIE] as string | undefined

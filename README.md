@@ -51,8 +51,10 @@ pnpm dev
 #   Web  → http://localhost:3001
 ```
 
-`pnpm build` type-checks and builds both packages. CI ([`.github/workflows/build.yml`](./.github/workflows/build.yml))
-runs `build` + `typecheck` + `lint` on every push / PR.
+`pnpm build` type-checks and builds both packages. CI ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml))
+runs two jobs on every push / PR: `build` + `typecheck` + `lint`, and the backend unit + e2e
+tests against a `postgres:16` service, followed by a migration drift check. Dependabot
+([`.github/dependabot.yml`](./.github/dependabot.yml)) opens weekly dependency and action updates.
 
 ### Demo accounts
 
@@ -79,7 +81,7 @@ Seeded by `pnpm db:seed`. **Password for all accounts: `11111111`.**
 │   app-vite      │ ──────────────────────────────────►  │    app-nest      │
 │  React 19 SPA   │        /uploads                      │  NestJS REST API │
 │  localhost:3001 │ ◄──────────────────────────────────  │  localhost:3000  │
-└─────────────────┘   JSON + JWT (Bearer, localStorage)  └────────┬─────────┘
+└─────────────────┘  JSON · Bearer JWT · refresh cookie  └────────┬─────────┘
                                                                   │ Prisma 7
                                                                   │ @prisma/adapter-pg
                                                           ┌───────▼─────────┐
@@ -94,7 +96,8 @@ Seeded by `pnpm db:seed`. **Password for all accounts: `11111111`.**
   (`POST /auth/refresh` rotates the token in place, `POST /auth/logout` deletes the row). The
   access token carries the session id (`sid`), so revoking a session (logout, "sign out other
   devices", or a password change) invalidates its access tokens immediately. `POST /auth/login`
-  / `register` / `refresh` are rate-limited to 10 req/min per IP.
+  and `register` are rate-limited to 10 req/min per IP (`THROTTLE_LIMIT`); `POST /auth/refresh`,
+  which runs on every page load, has its own limit of 60 req/min (`REFRESH_THROTTLE_LIMIT`).
 - **API base path**: `/api`. Uploaded files are served from `/uploads`.
 - In development the Vite dev server proxies `/api` and `/uploads` to the API. In production a
   reverse proxy is expected to route both to `app-nest` (or set `VITE_API_URL` /
@@ -176,6 +179,9 @@ only non-archived products and their own orders; `ADMIN` sees everything.
 | `JWT_EXPIRES_IN` | `15m` | access-token lifetime |
 | `JWT_REFRESH_EXPIRES_IN` | `30d` | refresh-token / session lifetime |
 | `MIN_ORDER_TOTAL` | `0` | minimum order total (USD) enforced at checkout; `0` disables it. |
+| `THROTTLE_TTL` | `60000` | rate-limit window for `/api/auth`, in milliseconds |
+| `THROTTLE_LIMIT` | `10` | login + register requests per window per IP |
+| `REFRESH_THROTTLE_LIMIT` | `60` | session refresh requests per window per IP |
 
 ### Scripts (`app-nest`)
 
@@ -185,6 +191,8 @@ pnpm --filter ./app-nest build        # nest build → dist/
 pnpm --filter ./app-nest start:prod   # node dist/main.js
 pnpm --filter ./app-nest lint         # eslint (lint:fix to autofix)
 pnpm --filter ./app-nest typecheck    # tsc --noEmit
+pnpm --filter ./app-nest test         # Jest unit tests (src/**/*.spec.ts)
+pnpm --filter ./app-nest test:e2e     # Supertest e2e against DATABASE_URL from .env.test
 pnpm --filter ./app-nest exec prisma migrate dev
 pnpm --filter ./app-nest exec prisma db seed
 ```
@@ -204,8 +212,10 @@ Vite + React SPA. See [`app-vite/`](./app-vite).
   `tailwind.config.js`) via `@tailwindcss/postcss`.
 - **shadcn/ui** primitives (Radix UI) in [`src/components/ui/`](./app-vite/src/components/ui).
 - **@tanstack/react-query** for server state ([`src/lib/queries.ts`](./app-vite/src/lib/queries.ts)),
-  **axios** client with a JWT request interceptor + 401 → `/login` redirect
-  ([`src/lib/api.ts`](./app-vite/src/lib/api.ts)).
+  **axios** client with an in-memory access token; a 401 triggers one token refresh and a
+  retry, then a redirect to `/login` ([`src/lib/api.ts`](./app-vite/src/lib/api.ts)).
+- Every page is lazy-loaded; `PageBoundary` shows a loading state and a reload prompt when a
+  page chunk fails. React, React Router and TanStack Query ship in a separate `vendor` chunk.
 - **zustand** + `localStorage` for the cart ([`src/lib/cart.ts`](./app-vite/src/lib/cart.ts)).
 - **react-hook-form** + **zod 4** for forms, **sonner** for toasts, **lucide-react** icons.
 
@@ -219,6 +229,7 @@ src/
     layouts/              ShopLayout (customer) · AdminLayout (admin/supplier)
     ui/                   shadcn primitives
     ProtectedRoute.tsx    role-based route guard + cross-area redirect
+    PageBoundary.tsx      Suspense + error boundary for lazy pages
   lib/                    api client, react-query hooks, cart store, types, formatters
   pages/
     auth/                 LoginPage · RegisterPage
@@ -293,14 +304,14 @@ Root (`package.json`) — run across the whole workspace:
 |---|---|
 | `pnpm dev` | both dev servers in parallel |
 | `pnpm build` | `pnpm -r build` (type-check + build both) |
-| `pnpm lint` / `pnpm typecheck` | across both packages |
+| `pnpm lint` / `pnpm typecheck` / `pnpm format` | across both packages |
 | `pnpm db:migrate` | `prisma migrate dev` (app-nest) |
 | `pnpm db:seed` | `prisma db seed` |
 | `pnpm db:reset` | `prisma migrate reset` — **blocked by Prisma's agent guard**; drop/recreate the DB manually instead |
 | `pnpm start:api` / `pnpm start:web` | one side only |
 
-> Workspace packages are named `@onetodone/pharmacy-catalog-{js,nest,vite}-app`, which no
-> longer match their folder names — all scripts use **path filters** (`--filter ./app-nest`).
+> Workspace packages are named `@onetodone/pharmacy-catalog-{js,nest,vite}-app`, which differ
+> from their folder names — all scripts use **path filters** (`--filter ./app-nest`).
 
 ---
 
@@ -308,37 +319,29 @@ Root (`package.json`) — run across the whole workspace:
 
 ### Auth & security
 
-- [x] **Refresh tokens + httpOnly cookies** instead of a long-lived JWT in `localStorage` —
-      access token is now in-memory only, refresh token is an httpOnly cookie backed by a
-      `Session` row; sessions are revocable (see the profile page).
-- [x] Rate limiting / brute-force protection on `POST /auth/login` — `@nestjs/throttler`,
-      10 req/min per IP on the credential endpoints.
-- [ ] Password-reset flow (needs the transactional email that was dropped).
-- [x] Real `JWT_SECRET` management for production — the app refuses to boot in production
-      while `JWT_SECRET` is empty or left at the `.env.example` placeholder.
+- [ ] Password-reset flow (needs transactional email).
+- [ ] Shared rate-limit store (Redis) for more than one API instance.
 
 ### Backend
 
-- [ ] **Automated tests** — there are currently **no unit or e2e tests**, only a manual
-      Playwright walk-through done during development. Add Jest unit tests for the order state
-      machine / checkout transaction and a Supertest e2e suite.
-- [ ] **Avatar upload for users** — `imageUpload('avatars')` helper exists in
+- [ ] Request logging, slow-query logging and secret masking in logs.
+- [ ] **Avatar upload for users** — the `imageUpload('avatars')` helper exists in
       [`common/upload.ts`](./app-nest/src/common/upload.ts) but no endpoint is wired; the
       `User.avatar` column is unused.
-- [ ] Product image handling: only a single `cover` is supported; no gallery, no image
-      deletion / replacement cleanup on disk, no orphaned-file GC.
+- [ ] Product images: only a single `cover` is supported; no gallery, no cleanup of replaced
+      or orphaned files on disk.
 - [ ] Pagination is offset-based everywhere; add cursor pagination for large catalogs.
-- [ ] No soft-delete **restore** UI/endpoint for archived products; no hard-delete path.
+- [ ] No **restore** UI/endpoint for archived products; no hard-delete path.
 - [ ] OpenAPI / Swagger document generation (`@nestjs/swagger`).
-- [ ] Structured logging + request tracing (currently `console.log`).
 - [ ] Move `MIN_ORDER_TOTAL` / other business config into the DB so admins can change it.
+- [ ] Readiness probe with a DB connectivity check beyond `GET /api/health`.
 
 ### Frontend
 
-- [ ] **Route-level code splitting** — the production bundle is ~510 kB; lazy-load admin pages.
-- [ ] Optimistic updates / better error boundaries around mutations.
+- [ ] Frontend tests (component tests or Playwright).
+- [ ] Optimistic updates / error handling around mutations.
 - [ ] Accessibility pass (focus traps, ARIA on custom widgets, keyboard nav on tables).
-- [ ] i18n (App is English-only now).
+- [ ] i18n (the app is English-only).
 - [ ] Empty / loading / error states are minimal on several admin tables.
 - [ ] Cart lives only in `localStorage` — no server-side cart, lost across devices.
 
@@ -356,6 +359,3 @@ Root (`package.json`) — run across the whole workspace:
 - [ ] Dockerfiles + a deployment `docker-compose` for the two apps (infra Postgres is
       managed centrally, app containers are not defined).
 - [ ] Production migration strategy (`prisma migrate deploy` in a release step).
-- [ ] CI currently builds + lints only — add a job that runs migrations against a throwaway
-      Postgres and executes the (future) test suite.
-- [ ] Health/readiness probes beyond `GET /api/health` (DB connectivity check).

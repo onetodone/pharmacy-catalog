@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Boxes,
@@ -16,7 +15,7 @@ import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/context/auth'
 import { cn } from '@/lib/utils'
 import type { Role } from '@/lib/types'
-import { PageFallback } from '@/components/PageFallback'
+import { PageBoundary } from '@/components/PageBoundary'
 import { Button } from '@/components/ui/button'
 import { RoleBadge } from '@/components/badges'
 import {
@@ -142,9 +141,9 @@ export function AdminLayout() {
           </header>
           <main className="flex-1 p-6">
             <div className="mx-auto max-w-6xl">
-              <Suspense fallback={<PageFallback />}>
+              <PageBoundary>
                 <Outlet />
-              </Suspense>
+              </PageBoundary>
             </div>
           </main>
         </div>

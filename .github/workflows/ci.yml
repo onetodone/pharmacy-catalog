@@ -21,11 +21,11 @@ jobs:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/pharmacy_catalog?schema=public
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -68,6 +68,7 @@ jobs:
       JWT_REFRESH_EXPIRES_IN: 30d
       MIN_ORDER_TOTAL: 0
       THROTTLE_LIMIT: 1000
+      REFRESH_THROTTLE_LIMIT: 1000
       THROTTLE_TTL: 60000
 
     steps:
@@ -89,3 +90,7 @@ jobs:
       # e2e migrates the test DB itself (test/global-setup.ts).
       - name: e2e tests
         run: pnpm --filter ./app-nest test:e2e
+
+      # Fails when schema.prisma has changes that no migration covers.
+      - name: Migration drift check
+        run: pnpm --filter ./app-nest exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
