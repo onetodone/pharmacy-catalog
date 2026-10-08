@@ -47,8 +47,8 @@ pnpm db:seed         # prisma db seed
 
 # Run both dev servers in parallel
 pnpm dev
-#   API  → http://localhost:3300/api      (health check: GET /api/health)
-#   Web  → http://localhost:4300
+#   API  → http://localhost:3000/api      (health check: GET /api/health)
+#   Web  → http://localhost:3001
 ```
 
 `pnpm build` type-checks and builds both packages. CI ([`.github/workflows/build.yml`](./.github/workflows/build.yml))
@@ -78,7 +78,7 @@ Seeded by `pnpm db:seed`. **Password for all accounts: `11111111`.**
 ┌─────────────────┐        /api  (proxied in dev)        ┌──────────────────┐
 │   app-vite      │ ──────────────────────────────────►  │    app-nest      │
 │  React 19 SPA   │        /uploads                      │  NestJS REST API │
-│  localhost:4300 │ ◄──────────────────────────────────  │  localhost:3300  │
+│  localhost:3001 │ ◄──────────────────────────────────  │  localhost:3000  │
 └─────────────────┘   JSON + JWT (Bearer, localStorage)  └────────┬─────────┘
                                                                   │ Prisma 7
                                                                   │ @prisma/adapter-pg
@@ -169,8 +169,8 @@ only non-archived products and their own orders; `ADMIN` sees everything.
 
 | Var | Example / default | Notes |
 |---|---|---|
-| `PORT` | `3300` | API port (NestFactory falls back to `3000` if unset) |
-| `CORS_ORIGIN` | `http://localhost:5174,http://localhost:4300` | comma-separated allowed origins |
+| `PORT` | `3000` | API port (NestFactory falls back to `3000` if unset) |
+| `CORS_ORIGIN` | `http://localhost:3001` | comma-separated allowed origins |
 | `DATABASE_URL` | `postgresql://postgres:root@localhost:5432/pharmacy_catalog?schema=public` | read by `prisma.config.ts` (CLI) and the adapter (runtime) |
 | `JWT_SECRET` | *(required in production)* | HS256 signing secret — resolved via `ConfigService`. In production the app **refuses to boot** while it is empty or still the placeholder. |
 | `JWT_EXPIRES_IN` | `15m` | access-token lifetime |
@@ -198,8 +198,8 @@ Vite + React SPA. See [`app-vite/`](./app-vite).
 ### Stack
 
 - **React 19** + **react-router-dom 7** ([`src/App.tsx`](./app-vite/src/App.tsx)).
-- **Vite 8** — dev server on port **4300**, proxies `/api` + `/uploads` to
-  `VITE_DEV_API_PROXY` (default `http://localhost:3300`).
+- **Vite 8** — dev server on port **3001** (`VITE_DEV_PORT`), proxies `/api` + `/uploads` to
+  `VITE_DEV_API_PROXY` (default `http://localhost:3000`).
 - **Tailwind CSS v4** (CSS-first: `@import 'tailwindcss'`, `@theme inline`, no
   `tailwind.config.js`) via `@tailwindcss/postcss`.
 - **shadcn/ui** primitives (Radix UI) in [`src/components/ui/`](./app-vite/src/components/ui).
@@ -243,12 +243,13 @@ after changing them. All are optional:
 |---|---|---|
 | `VITE_API_URL` | `/api` | absolute URL only when the API is on a different origin |
 | `VITE_ASSETS_URL` | `/uploads` | uploaded-asset base URL |
-| `VITE_DEV_API_PROXY` | `http://localhost:3300` | dev-only proxy target for `/api` + `/uploads` |
+| `VITE_DEV_PORT` | `3001` | dev-only `vite dev` port; keep it in the API's `CORS_ORIGIN` |
+| `VITE_DEV_API_PROXY` | `http://localhost:3000` | dev-only proxy target for `/api` + `/uploads` |
 
 ### Scripts (`app-vite`)
 
 ```
-pnpm --filter ./app-vite dev          # vite dev server (:4300)
+pnpm --filter ./app-vite dev          # vite dev server (:3001)
 pnpm --filter ./app-vite build        # tsc -b && vite build → dist/
 pnpm --filter ./app-vite preview      # serve the production build
 pnpm --filter ./app-vite lint

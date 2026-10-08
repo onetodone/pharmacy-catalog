@@ -4,7 +4,8 @@ import path from 'node:path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, import.meta.dirname, '')
-  const apiProxyTarget = env.VITE_DEV_API_PROXY || 'http://localhost:3300'
+  const apiProxyTarget = env.VITE_DEV_API_PROXY || 'http://localhost:3000'
+  const devPort = Number(env.VITE_DEV_PORT) || 3001
 
   return {
     plugins: [react()],
@@ -12,7 +13,7 @@ export default defineConfig(({ mode }) => {
       alias: { '@': path.resolve(import.meta.dirname, './src') },
     },
     server: {
-      port: 4300,
+      port: devPort,
       proxy: {
         '/api': { target: apiProxyTarget, changeOrigin: true },
         '/uploads': { target: apiProxyTarget, changeOrigin: true },

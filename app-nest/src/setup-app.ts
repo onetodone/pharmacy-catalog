@@ -16,7 +16,7 @@ export function configureApp(app: INestApplication): void {
   app.use(cookieParser())
 
   app.enableCors({
-    origin: (process.env.CORS_ORIGIN ?? 'http://localhost:4300').split(','),
+    origin: (process.env.CORS_ORIGIN ?? 'http://localhost:3001').split(','),
     credentials: true,
   })
 
