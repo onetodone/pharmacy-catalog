@@ -88,7 +88,10 @@ export function SessionsList() {
               <Monitor className="size-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium" title={session.userAgent ?? undefined}>
+              <p
+                className="truncate text-sm font-medium"
+                title={session.userAgent ?? undefined}
+              >
                 {session.userAgent ?? 'Unknown device'}
               </p>
               <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
@@ -114,7 +117,8 @@ export function SessionsList() {
                   if (
                     await confirm({
                       title: 'Sign out this session?',
-                      description: 'The device using this session will need to sign in again.',
+                      description:
+                        'The device using this session will need to sign in again.',
                       confirmText: 'Sign out',
                       destructive: true,
                     })
