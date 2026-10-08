@@ -136,7 +136,8 @@ export function AdminNewsPage() {
                             if (
                               await confirm({
                                 title: 'Delete this post?',
-                                description: 'The news post will be permanently removed.',
+                                description:
+                                  'The news post will be permanently removed.',
                                 confirmText: 'Delete',
                                 destructive: true,
                               })

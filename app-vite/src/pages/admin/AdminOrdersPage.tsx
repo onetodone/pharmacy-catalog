@@ -215,7 +215,8 @@ export function AdminOrdersPage() {
                               if (
                                 await confirm({
                                   title: `Delete order ${order.code}?`,
-                                  description: 'This permanently removes the order and its items.',
+                                  description:
+                                    'This permanently removes the order and its items.',
                                   confirmText: 'Delete',
                                   destructive: true,
                                 })
