@@ -1,6 +1,6 @@
 {
   "name": "@onetodone/pharmacy-catalog-vite-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Pharmacy Catalog web client — Vite + React + Tailwind CSS v4 + shadcn/ui SPA for the pharmacy shop.",
   "author": {
