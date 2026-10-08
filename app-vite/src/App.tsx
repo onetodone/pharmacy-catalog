@@ -1,6 +1,5 @@
-import { Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { PageFallback } from '@/components/PageFallback'
+import { PageBoundary } from '@/components/PageBoundary'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { ShopLayout } from '@/components/layouts/ShopLayout'
 import { lazyPage } from '@/lib/lazy-page'
@@ -74,7 +73,7 @@ const AdminProfilePage = lazyPage(
 
 export function App() {
   return (
-    <Suspense fallback={<PageFallback fullScreen />}>
+    <PageBoundary fullScreen>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -145,6 +144,6 @@ export function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Suspense>
+    </PageBoundary>
   )
 }

@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LogOut,
@@ -10,7 +9,7 @@ import {
 import { useAuth } from '@/context/auth'
 import { useCart } from '@/lib/cart'
 import { cn } from '@/lib/utils'
-import { PageFallback } from '@/components/PageFallback'
+import { PageBoundary } from '@/components/PageBoundary'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -116,9 +115,9 @@ export function ShopLayout() {
         </div>
       </header>
       <main className="container py-8">
-        <Suspense fallback={<PageFallback />}>
+        <PageBoundary>
           <Outlet />
-        </Suspense>
+        </PageBoundary>
       </main>
     </div>
   )
