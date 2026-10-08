@@ -1,6 +1,6 @@
 {
   "name": "@onetodone/pharmacy-catalog-js-app",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "Pharmacy catalog — a multi-vendor wholesale shop. pnpm monorepo with a NestJS + Prisma API and a Vite + React SPA.",
   "author": {
@@ -8,7 +8,7 @@
     "url": "https://github.com/aholu"
   },
   "license": "UNLICENSED",
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@12.10.1",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",

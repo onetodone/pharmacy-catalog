@@ -29,7 +29,7 @@ The repository is a **pnpm workspace** with two packages:
 
 ### Prerequisites
 
-- **Node.js ≥ 20**, **pnpm ≥ 11**
+- **Node.js ≥ 20**, **pnpm ≥ 12**
 - **PostgreSQL** — provided centrally by the WSL Docker server as `local-postgres`
   (`localhost:5432`, `postgres` / `root`). Check with `dstatus`; start with `dstart postgres`.
 
