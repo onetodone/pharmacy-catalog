@@ -1,6 +1,6 @@
 {
   "name": "@onetodone/pharmacy-catalog-js-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Pharmacy catalog — a multi-vendor wholesale shop. pnpm monorepo with a NestJS + Prisma API and a Vite + React SPA.",
   "author": {
