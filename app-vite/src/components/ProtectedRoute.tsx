@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
+import { PageFallback } from '@/components/PageFallback'
 import { homePathFor, useAuth } from '@/context/auth'
 import type { Role } from '@/lib/types'
 
@@ -14,11 +15,7 @@ export function ProtectedRoute({
   const location = useLocation()
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Loading…
-      </div>
-    )
+    return <PageFallback fullScreen />
   }
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
