@@ -3,6 +3,7 @@ packages:
   - app-vite
 
 allowBuilds:
+  "@parcel/watcher": false
   "@prisma/client": true
   "@prisma/engines": true
   "@swc/core": false
