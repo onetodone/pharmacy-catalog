@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
+import { NestFactory } from '@nestjs/core'
 import request from 'supertest'
 import { AppModule } from '../../src/app.module'
 import { PrismaService } from '../../src/prisma/prisma.service'
@@ -13,9 +13,8 @@ export interface E2EContext {
 }
 
 export async function createE2EApp(): Promise<E2EContext> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
-
-  const app = moduleRef.createNestApplication()
+  // NestFactory rather than a testing module: ServeStaticModule registers nothing without an HTTP adapter at compile time.
+  const app = await NestFactory.create(AppModule, { logger: ['error', 'warn'], abortOnError: false })
   configureApp(app)
   await app.init()
 

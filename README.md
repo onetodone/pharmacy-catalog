@@ -125,8 +125,8 @@ NestJS 12 REST API. See [`app-nest/`](./app-nest).
 - **Auth**: `passport-jwt` + `@nestjs/jwt` (`JwtModule.registerAsync` + `ConfigService`),
   `bcryptjs` for password hashing.
 - **File uploads**: `multer` v2, disk storage, 2 MB limit, PNG/JPEG/WEBP only
-  ([`src/common/upload.ts`](./app-nest/src/common/upload.ts)). Files go to `uploads/products/`.
-- **Static files**: `@nestjs/serve-static` serves `uploads/` at `/uploads`.
+  ([`src/common/upload.ts`](./app-nest/src/common/upload.ts)). Files go to `products/` inside `UPLOADS_DIR`.
+- **Static files**: `@nestjs/serve-static` serves `UPLOADS_DIR` at `/uploads`.
 
 ### Guards & decorators
 
@@ -173,6 +173,8 @@ only non-archived products and their own orders; `ADMIN` sees everything.
 | Var | Example / default | Notes |
 |---|---|---|
 | `PORT` | `3000` | API port (NestFactory falls back to `3000` if unset) |
+| `HOST` | *(all interfaces)* | listen address, for example `127.0.0.1` behind a reverse proxy |
+| `UPLOADS_DIR` | `uploads` | directory for uploaded files, relative to the API's working directory unless absolute |
 | `CORS_ORIGIN` | `http://localhost:3001` | comma-separated allowed origins |
 | `DATABASE_URL` | `postgresql://postgres:root@localhost:5432/pharmacy_catalog?schema=public` | read by `prisma.config.ts` (CLI) and the adapter (runtime) |
 | `JWT_SECRET` | *(required in production)* | HS256 signing secret — resolved via `ConfigService`. In production the app **refuses to boot** while it is empty or still the placeholder. |

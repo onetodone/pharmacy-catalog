@@ -9,9 +9,10 @@ async function bootstrap() {
   configureApp(app)
 
   const port = Number(process.env.PORT ?? 3000)
-  await app.listen(port)
+  const host = process.env.HOST
+  await (host ? app.listen(port, host) : app.listen(port))
 
-  new Logger('Bootstrap').log(`API ready on http://localhost:${port}/api`)
+  new Logger('Bootstrap').log(`API ready on http://${host ?? 'localhost'}:${port}/api`)
 }
 
 void bootstrap()
